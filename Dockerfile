@@ -54,22 +54,22 @@ ARG mirror
 ARG upstream
 ARG qpidpython
 RUN set -ex ;\
-    curl -LOsS ${upstream}/python/${qpidpython}/qpid-python-${qpidpython}.tar.gz.asc ;\
-    curl -LOsS ${mirror}/python/${qpidpython}/qpid-python-${qpidpython}.tar.gz ;\
+    curl -fLOsS ${upstream}/python/${qpidpython}/qpid-python-${qpidpython}.tar.gz.asc ;\
+    curl -fLOsS ${mirror}/python/${qpidpython}/qpid-python-${qpidpython}.tar.gz ;\
     gpg --verify qpid-python-${qpidpython}.tar.gz.asc qpid-python-${qpidpython}.tar.gz ;\
     tar zxf qpid-python-${qpidpython}.tar.gz
 
 ARG proton
 RUN set -ex ;\
-    curl -LOsS ${upstream}/proton/${proton}/qpid-proton-${proton}.tar.gz.asc ;\
-    curl -LOsS ${mirror}/proton/${proton}/qpid-proton-${proton}.tar.gz ;\
+    curl -fLOsS ${upstream}/proton/${proton}/qpid-proton-${proton}.tar.gz.asc ;\
+    curl -fLOsS ${mirror}/proton/${proton}/qpid-proton-${proton}.tar.gz ;\
     gpg --verify qpid-proton-${proton}.tar.gz.asc qpid-proton-${proton}.tar.gz ;\
     tar zxf qpid-proton-${proton}.tar.gz
 
 ARG cpp
 RUN set -ex ;\
-    curl -LOsS ${upstream}/cpp/${cpp}/qpid-cpp-${cpp}.tar.gz.asc ;\
-    curl -LOsS ${mirror}/cpp/${cpp}/qpid-cpp-${cpp}.tar.gz ;\
+    curl -fLOsS ${upstream}/cpp/${cpp}/qpid-cpp-${cpp}.tar.gz.asc ;\
+    curl -fLOsS ${mirror}/cpp/${cpp}/qpid-cpp-${cpp}.tar.gz ;\
     gpg --verify qpid-cpp-${cpp}.tar.gz.asc qpid-cpp-${cpp}.tar.gz ;\
     tar zxf qpid-cpp-${cpp}.tar.gz
 
