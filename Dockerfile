@@ -20,6 +20,8 @@ ARG qpidpython=1.37.0
 ARG mirror=http://www.nic.funet.fi/pub/mirrors/apache.org/qpid
 ARG upstream=https://www-eu.apache.org/dist/qpid
 ARG home=/var/lib/qpidd
+ARG CREATED
+ARG SOURCE_COMMIT
 
 # This can be a common base for all build dependencies
 FROM buildpack-deps:buster AS builddeps
@@ -164,6 +166,8 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 # Use ^ and $ to avoid match anywhere in middle of string.
 CMD ["--topic-patterns", "^/topic/", "--queue-patterns", "^[^/]"]
 
+ARG CREATED
+ARG SOURCE_COMMIT
 # See https://github.com/opencontainers/image-spec/blob/master/annotations.md
 LABEL fi.okoko.image.authors="Marko Kohtala <marko.kohtala@okoko.fi>"
 LABEL fi.okoko.image.url="https://hub.docker.com/r/okoko/qpid-cpp"
@@ -173,6 +177,6 @@ LABEL fi.okoko.image.vendor="Software Consulting Kohtala Ltd"
 LABEL fi.okoko.image.licenses="Apache-2.0"
 LABEL fi.okoko.image.title="Apache Qpid C++ Broker"
 LABEL fi.okoko.image.description="Apache Qpid C++ AMQP Broker"
-#LABEL fi.okoko.image.created="YYYY-MM-DDTHH:MM:SSZ"
+LABEL fi.okoko.image.created="${CREATED}"
 LABEL fi.okoko.image.version="${cpp}"
-#LABEL fi.okoko.image.revision
+LABEL fi.okoko.image.revision="${SOURCE_COMMIT}"
