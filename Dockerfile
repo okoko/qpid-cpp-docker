@@ -39,14 +39,14 @@ RUN gpg --import KEYS
 WORKDIR /usr/src
 
 # See https://github.com/opencontainers/image-spec/blob/master/annotations.md
-LABEL org.opencontainers.image.authors="Marko Kohtala <marko.kohtala@okoko.fi>"
-LABEL org.opencontainers.image.url="https://hub.docker.com/r/okoko/qpid-build"
-LABEL org.opencontainers.image.documentation="https://github.com/okoko/qpid-cpp-docker"
-LABEL org.opencontainers.image.source="https://github.com/okoko/qpid-cpp-docker"
-LABEL org.opencontainers.image.vendor="Software Consulting Kohtala Ltd"
-LABEL org.opencontainers.image.licenses="Apache-2.0"
-LABEL org.opencontainers.image.title="Apache Qpid C++ Broker"
-LABEL org.opencontainers.image.description="Apache Qpid build dependencies for development"
+LABEL fi.okoko.image.authors="Marko Kohtala <marko.kohtala@okoko.fi>"
+LABEL fi.okoko.image.url="https://hub.docker.com/r/okoko/qpid-build"
+LABEL fi.okoko.image.documentation="https://github.com/okoko/qpid-cpp-docker"
+LABEL fi.okoko.image.source="https://github.com/okoko/qpid-cpp-docker"
+LABEL fi.okoko.image.vendor="Software Consulting Kohtala Ltd"
+LABEL fi.okoko.image.licenses="Apache-2.0"
+LABEL fi.okoko.image.title="Apache Qpid C++ Broker"
+LABEL fi.okoko.image.description="Apache Qpid build dependencies for development"
 
 
 FROM builddeps AS build
@@ -165,14 +165,14 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["--topic-patterns", "^/topic/", "--queue-patterns", "^[^/]"]
 
 # See https://github.com/opencontainers/image-spec/blob/master/annotations.md
-LABEL org.opencontainers.image.authors="Marko Kohtala <marko.kohtala@okoko.fi>"
-LABEL org.opencontainers.image.url="https://hub.docker.com/r/okoko/qpid-cpp"
-LABEL org.opencontainers.image.documentation="https://github.com/okoko/qpid-cpp-docker"
-LABEL org.opencontainers.image.source="https://github.com/okoko/qpid-cpp-docker"
-LABEL org.opencontainers.image.vendor="Software Consulting Kohtala Ltd"
-LABEL org.opencontainers.image.licenses="Apache-2.0"
-LABEL org.opencontainers.image.title="Apache Qpid C++ Broker"
-LABEL org.opencontainers.image.description="Apache Qpid C++ AMQP Broker"
-#LABEL org.opencontainers.image.created="YYYY-MM-DDTHH:MM:SSZ"
-LABEL org.opencontainers.image.version="${cpp}"
-#LABEL org.opencontainers.image.revision
+LABEL fi.okoko.image.authors="Marko Kohtala <marko.kohtala@okoko.fi>"
+LABEL fi.okoko.image.url="https://hub.docker.com/r/okoko/qpid-cpp"
+LABEL fi.okoko.image.documentation="https://github.com/okoko/qpid-cpp-docker"
+LABEL fi.okoko.image.source="https://github.com/okoko/qpid-cpp-docker"
+LABEL fi.okoko.image.vendor="Software Consulting Kohtala Ltd"
+LABEL fi.okoko.image.licenses="Apache-2.0"
+LABEL fi.okoko.image.title="Apache Qpid C++ Broker"
+LABEL fi.okoko.image.description="Apache Qpid C++ AMQP Broker"
+#LABEL fi.okoko.image.created="YYYY-MM-DDTHH:MM:SSZ"
+LABEL fi.okoko.image.version="${cpp}"
+#LABEL fi.okoko.image.revision
