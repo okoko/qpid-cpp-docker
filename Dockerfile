@@ -15,7 +15,7 @@
 # ARG usage documentation
 # https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
 ARG cpp=1.39.0
-ARG proton=0.29.0
+ARG proton=0.30.0
 ARG qpidpython=1.37.0
 ARG mirror=http://www.nic.funet.fi/pub/mirrors/apache.org/qpid
 ARG upstream=https://www-eu.apache.org/dist/qpid
@@ -110,7 +110,7 @@ RUN ldd /usr/local/sbin/qpidd $(find /usr/local -name '*.so') | \
     sed 's/^\([^:]\+\):.*$/\1/' | sort -u > dependency.lst
 
 
-FROM debian:10.1-slim AS qpid-cpp
+FROM debian:10.2-slim AS qpid-cpp
 
 ARG proton
 ARG qpidpython
