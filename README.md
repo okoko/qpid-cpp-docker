@@ -48,9 +48,10 @@ variables.
 - `QPIDD_SSL_DB_DIR` defines the directory where the NSS tools
   certificate database will be created. By default `$QPIDD_HOME/etc/ssl`
 - `QPIDD_SSL_SERVER_PUBLIC_KEY` and `QPIDD_SSL_SERVER_PRIVATE_KEY`
-  specify the public and private keys of the broker certificate. (The
-  keys should be stored in these variables as strings, not as a path to
-  file). If specified, the broker will be configured with SSL
+  specify the public crt file and private pem key file contents of the
+  broker certificate. (The keys should be stored in these variables as
+  strings, not as a path to file). If specified, the broker will be
+  configured with SSL
 - `QPIDD_SSL_TRUSTED_CA` defines the certificates which will be accepted
   as trusted CA certificates
 - `QPIDD_SSL_TRUSTED_PEER` defines the certificates which will be

@@ -1,9 +1,0 @@
-#!/bin/sh
-# See https://docs.docker.com/docker-hub/builds/advanced/
-if [ "$DOCKER_TAG" = latest ]
-then
-    QPID_CPP="$(docker run --rm $IMAGE_NAME sh -c 'echo $QPID_CPP_VERSION')"
-    QPID_PROTON="$(docker run --rm $IMAGE_NAME sh -c 'echo $QPID_PROTON_VERSION')"
-    docker tag $IMAGE_NAME $DOCKER_REPO:$QPID_CPP-$QPID_PROTON
-    docker push $DOCKER_REPO:$QPID_CPP-$QPID_PROTON
-fi

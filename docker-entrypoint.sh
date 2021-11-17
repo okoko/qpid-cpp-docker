@@ -79,7 +79,7 @@ if [ "$1" = "qpidd" ]; then
     #####
     # SSL
     #####
-    if [[ "$QPIDD_SSL_SERVER_PUBLIC_KEY" && "$QPIDD_SSL_SERVER_PRIVATE_KEY" ]]; then
+    if [ "$QPIDD_SSL_SERVER_PUBLIC_KEY" -a "$QPIDD_SSL_SERVER_PRIVATE_KEY" ]; then
         tempDir="$(mktemp -d)"
 
         if [ -z "$QPIDD_SSL_DB_DIR" ]; then
@@ -108,7 +108,7 @@ if [ "$1" = "qpidd" ]; then
         # Does the database already exist?
         echo "DEBUG: NSS DB"
         #certutil -L -d sql:$QPIDD_SSL_DB_DIR >> /dev/null
-        if [[ ! -f $QPIDD_SSL_DB_DIR/cert9.db || ! -f $QPIDD_SSL_DB_DIR/key4.db ]] ; then
+        if [ ! -f $QPIDD_SSL_DB_DIR/cert9.db -o ! -f $QPIDD_SSL_DB_DIR/key4.db ] ; then
             certutil -N -d sql:$QPIDD_SSL_DB_DIR -f $QPIDD_SSL_DB_PASSWORD_FILE
         fi
 
@@ -182,7 +182,7 @@ if [ "$1" = "qpidd" ]; then
     fi
 
     if [ ! -f "$QPIDD_SASL_CONFIG_DIR/qpidd.conf" ]; then
-        if [[ $sasl_plain -eq 1 || $sasl_external -eq 1 ]]; then
+        if [ $sasl_plain -eq 1 -o $sasl_external -eq 1 ]; then
             mkdir -p "$(dirname $QPIDD_SASL_CONFIG_DIR)"
 
             mechs=""
