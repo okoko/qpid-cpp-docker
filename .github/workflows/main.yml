@@ -3,6 +3,10 @@ on:
   push:
     branches:
     - master
+  # We want to periodically update the base image for security
+  schedule:
+    # min hour dom month dow
+    - cron: '22 3 * * 1'
   workflow_dispatch:
 jobs:
   build:
