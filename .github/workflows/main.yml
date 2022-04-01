@@ -54,12 +54,12 @@ jobs:
       run: |
         set -x
         eval $( docker image inspect okoko/qpid-cpp:latest | sed -n -e 's/.*"\(QPID_\(PROTON\|CPP\)_VERSION=.*\)".*/\1/p' )
+        docker tag okoko/qpid-cpp:latest ghcr.io/${{ github.repository }}:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
+        docker push ghcr.io/${{ github.repository }}:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
+        docker push ghcr.io/${{ github.repository }}:latest
         docker tag okoko/qpid-cpp:latest okoko/qpid-cpp:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
         docker push okoko/qpid-cpp:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
         docker push okoko/qpid-cpp:latest
-        docker tag okoko/qpid-cpp:latest ghcr.io/okoko/qpid-cpp:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
-        docker push ghcr.io/okoko/qpid-cpp:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
-        docker push ghcr.io/okoko/qpid-cpp:latest
 
   # Can not use Personal Access Token to update the README. Returns FORBIDDEN.
   describe:
