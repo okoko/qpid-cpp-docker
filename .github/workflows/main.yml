@@ -44,19 +44,19 @@ jobs:
           SOURCE_COMMIT=${{ github.sha }}
         tags: |
           okoko/qpid-cpp:latest
-          ghcr.io/${{ github.repository }}
+          ghcr.io/okoko/qpid-cpp:latest
         # https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md#github-cache
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Tag with the versions
+    - name: Push with the version tags
       if: github.ref == 'refs/heads/master'
       run: |
         set -x
         eval $( docker image inspect okoko/qpid-cpp:latest | sed -n -e 's/.*"\(QPID_\(PROTON\|CPP\)_VERSION=.*\)".*/\1/p' )
-        docker tag okoko/qpid-cpp:latest ghcr.io/${{ github.repository }}:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
-        docker push ghcr.io/${{ github.repository }}:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
-        docker push ghcr.io/${{ github.repository }}:latest
+        docker tag okoko/qpid-cpp:latest ghcr.io/okoko/qpid-cpp:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
+        docker push ghcr.io/okoko/qpid-cpp:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
+        docker push ghcr.io/okoko/qpid-cpp:latest
         docker tag okoko/qpid-cpp:latest okoko/qpid-cpp:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
         docker push okoko/qpid-cpp:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
         docker push okoko/qpid-cpp:latest
@@ -73,4 +73,4 @@ jobs:
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
-        repository: okoko/python-torch
+        repository: okoko/qpid-cpp
