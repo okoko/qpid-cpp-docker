@@ -11,14 +11,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      metadata: read
+      packages: write
     steps:
     - id: created
       run: echo "::set-output name=created::$(date --utc +%Y-%m-%dT%H:%M:%SZ)"
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
+      uses: docker/setup-buildx-action@94ab11c41e45d028884a99163086648e898eed25
 
     - name: Log in to Docker Hub
       uses: docker/login-action@dd4fa0671be5250ee6f50aedf4cb05514abda2c7
@@ -67,9 +71,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master'
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Docker Hub Description
-      uses: peter-evans/dockerhub-description@v2
+      uses: peter-evans/dockerhub-description@836d7e6aa8f6f32dce26f5a1dd46d3dc24997eae
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
