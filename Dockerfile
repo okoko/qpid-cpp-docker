@@ -16,8 +16,8 @@
 # ARG usage documentation
 # https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
 ARG cpp=1.39.0
-ARG cpp_commit=772311f54c00bae23a46c7125c7763a27cccfb69
-ARG proton=0.37.0
+ARG cpp_commit=5f1be960d0814e929767cf16468330baca80ad22
+ARG proton=0.38.0
 ARG qpidpython=1.37.0
 ARG mirror=http://www.nic.funet.fi/pub/mirrors/apache.org/qpid
 ARG upstream=https://www-eu.apache.org/dist/qpid
@@ -41,8 +41,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
         libdb++-dev libaio-dev ruby libnss3-dev libsasl2-dev libxqilla-dev \
         libibverbs-dev librdmacm-dev \
         swig libjsoncpp-dev \
-        python2-dev python-setuptools python-is-python2 \
-        python3-dev python3-setuptools
+        python2-dev python-setuptools python-is-python2
 
 COPY KEYS .
 RUN gpg --import KEYS
@@ -89,10 +88,9 @@ RUN set -ex; \
 RUN set -ex; \
     cd qpid-proton-${proton}; \
     mkdir bld && cd bld; \
-    cmake -DINCLUDE_INSTALL_DIR=/usr/include -DCMAKE_BUILD_TYPE=Release -DBUILD_CPP=OFF -DBUILD_TESTING=OFF -DSYSINSTALL_BINDINGS=ON .. ; \
+    cmake -DINCLUDE_INSTALL_DIR=/usr/include -DCMAKE_BUILD_TYPE=Release -DBUILD_CPP=OFF -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF -DSYSINSTALL_BINDINGS=ON .. ; \
     make -j $(($(nproc)+1)) all; \
     make install
-#-DSYSINSTALL_PYTHON=ON
 RUN set -ex; \
     cd qpid-cpp-${cpp_commit}; \
     mkdir bld && cd bld; \
@@ -153,7 +151,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends --no-upgrade \
 # Qpid CPP dependencies
-        python2-minimal python-pkg-resources python3-minimal \
+        python2-minimal python-pkg-resources \
         $(cat /tmp/dependency.lst) \
         ca-certificates libsasl2-modules \
 # The docker-entrypoint.sh uses these
@@ -166,9 +164,6 @@ COPY --from=build /usr/local /usr/local/
 COPY --from=build /etc/qpid /etc/qpid/
 COPY --from=build /etc/sasl2 /etc/sasl2/
 COPY docker-entrypoint.sh /
-# Needed for examples, the qpid-tool works within /usr/local
-COPY --from=build /usr/lib/python3/dist-packages/*cproton* /usr/lib/python3/dist-packages/
-COPY --from=build /usr/lib/python3/dist-packages/proton /usr/lib/python3/dist-packages/proton/
 # Update /etc/ld.so.cache so new libraries are found
 RUN ldconfig
 
