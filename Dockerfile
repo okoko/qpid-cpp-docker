@@ -19,8 +19,10 @@ ARG cpp=1.39.0
 ARG cpp_commit=5f1be960d0814e929767cf16468330baca80ad22
 ARG proton=0.38.0
 ARG qpidpython=1.37.0
-ARG mirror=http://www.nic.funet.fi/pub/mirrors/apache.org/qpid
-ARG upstream=https://www-eu.apache.org/dist/qpid
+# Only latest versions are available on CDN or any mirror.
+# https://archive.apache.org/ has a download limit and must not be used.
+ARG mirror=https://dlcdn.apache.org/qpid/
+ARG upstream=https://dlcdn.apache.org/qpid/
 ARG home=/var/lib/qpidd
 ARG CREATED
 ARG SOURCE_COMMIT
