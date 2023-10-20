@@ -40,8 +40,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
         cmake uuid-dev libboost-program-options-dev libboost-system-dev \
-        libdb++-dev libaio-dev ruby libnss3-dev libsasl2-dev libxqilla-dev \
-        libibverbs-dev librdmacm-dev \
+        libdb++-dev libaio-dev ruby libnss3-dev libsasl2-dev \
         swig libjsoncpp-dev \
         python2-dev python-setuptools python-is-python2
 
@@ -89,19 +88,20 @@ RUN set -ex; \
 
 RUN set -ex; \
     cd qpid-proton-${proton}; \
-    mkdir bld && cd bld; \
+    mkdir build && cd build; \
     cmake -DINCLUDE_INSTALL_DIR=/usr/include -DCMAKE_BUILD_TYPE=Release -DBUILD_CPP=OFF -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF -DSYSINSTALL_BINDINGS=ON .. ; \
     make -j $(($(nproc)+1)) all; \
     make install
 RUN set -ex; \
     cd qpid-cpp-${cpp_commit}; \
-    mkdir bld && cd bld; \
+    mkdir build && cd build; \
     # BOOST_BIND_GLOBAL_PLACEHOLDERS silences a lot of deprecation message:
     # The practice of declaring the Bind placeholders (_1, _2, ...) in the global namespace is deprecated.
     # Please use <boost/bind/bind.hpp> + using namespace boost::placeholders, or define BOOST_BIND_GLOBAL_PLACEHOLDERS to retain the current behavior.
     cmake -DSYSCONF_INSTALL_DIR=/etc -DCMAKE_BUILD_TYPE=Release -DBUILD_BINDING_PERL=OFF -DBUILD_DOCS=OFF -DBUILD_TESTING=OFF -DCMAKE_CXX_FLAGS=-DBOOST_BIND_GLOBAL_PLACEHOLDERS .. ; \
     make -j $(($(nproc)+1)) all; \
     make install
+# RUN cd qpid-cpp-${cpp_commit}/build && cmake -LAH ..
 # This is some MS-SQL plugin selector that just gives annoying warning
 RUN rm -f /usr/local/lib/qpid/daemon/store.so
 # These Windows BAT files are a nuisance on command line completion
@@ -159,7 +159,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
 # The docker-entrypoint.sh uses these
         libnss3-tools sasl2-bin
 
-# /usr/src/qpid-*/bld/install_manifext.txt contain most, but not all files to copy.
+# /usr/src/qpid-*/build/install_manifext.txt contain most, but not all files to copy.
 # Similarly I tried to use make install DESTDIR=/usr/src/install to gather
 # files to one location to copy, but DESTDIR is not respected for all files installed.
 COPY --from=build /usr/local /usr/local/
