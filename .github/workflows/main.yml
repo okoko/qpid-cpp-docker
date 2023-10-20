@@ -37,32 +37,58 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Discover the version tag
+      id: tag
+      run: |
+        set -x
+        eval $( docker image inspect okoko/qpid-cpp:latest | sed -n -e 's/.*"\(QPID_\(PROTON\|CPP\)_VERSION=.*\)".*/\1/p' )
+        echo "tag=$QPID_CPP_VERSION-$QPID_PROTON_VERSION" >> $GITHUB_OUTPUT
+
     - uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
       id: docker_build
       with:
         context: .
-        load: true
+        push: ${{ github.ref == 'refs/heads/main' }}
         build-args: |
           CREATED=${{ steps.created.outputs.created }}
           SOURCE_COMMIT=${{ github.sha }}
         tags: |
-          okoko/qpid-cpp:latest
+          ghcr.io/okoko/qpid-cpp:${{ steps.tag.outputs.tag }}
           ghcr.io/okoko/qpid-cpp:latest
+          okoko/qpid-cpp:${{ steps.tag.outputs.tag }}
+          okoko/qpid-cpp:latest
         # https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md#github-cache
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Push with the version tags
+    # With org.opencontainers.image.source pointing to this repository Dockerfile FROM updates in pull requests can be scanned
+    # if the commits have matching tags with the image.
+    # https://github.blog/changelog/2023-04-13-dependabot-now-supports-fetching-release-notes-and-changelogs-for-docker-images/
+    # https://octokit.github.io/rest.js/v19#git-create-ref
+    # https://octokit.github.io/rest.js/v19#git-update-ref
+    - name: Tag the commit or update tag
       if: github.ref == 'refs/heads/main'
-      run: |
-        set -x
-        eval $( docker image inspect okoko/qpid-cpp:latest | sed -n -e 's/.*"\(QPID_\(PROTON\|CPP\)_VERSION=.*\)".*/\1/p' )
-        docker tag okoko/qpid-cpp:latest ghcr.io/okoko/qpid-cpp:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
-        docker push ghcr.io/okoko/qpid-cpp:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
-        docker push ghcr.io/okoko/qpid-cpp:latest
-        docker tag okoko/qpid-cpp:latest okoko/qpid-cpp:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
-        docker push okoko/qpid-cpp:$QPID_CPP_VERSION-$QPID_PROTON_VERSION
-        docker push okoko/qpid-cpp:latest
+      uses: actions/github-script@v6
+      with:
+        script: |
+          try {
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: 'refs/tags/${{ steps.tag.outputs.tag }}',
+              sha: context.sha,
+            });
+          } catch(e) {
+            if (e.status === 422) {
+              await github.rest.git.updateRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: 'tags/${{ steps.tag.outputs.tag }}',
+                sha: context.sha,
+                force: true,
+              });
+            }
+          }
 
   # Can not use Personal Access Token to update the README. Returns FORBIDDEN.
   describe:
