@@ -45,7 +45,7 @@ RUN --mount=type=cache,target=/var/cache/apt \
         python2-dev python-setuptools python-is-python2
 
 COPY KEYS .
-RUN gpg --import KEYS
+RUN gpg --no-default-keyring --keyring trustedkeys.kbx --import KEYS
 
 WORKDIR /usr/src
 
@@ -64,18 +64,22 @@ FROM builddeps AS build
 ARG mirror
 ARG upstream
 ARG qpidpython
-RUN set -ex ;\
-    curl -fLOsS ${upstream}/python/${qpidpython}/qpid-python-${qpidpython}.tar.gz.asc ;\
-    curl -fLOsS ${mirror}/python/${qpidpython}/qpid-python-${qpidpython}.tar.gz ;\
-    gpgv qpid-python-${qpidpython}.tar.gz.asc qpid-python-${qpidpython}.tar.gz ;\
+RUN <<NUR
+    set -ex
+    curl -fLOsS ${upstream}python/${qpidpython}/qpid-python-${qpidpython}.tar.gz.asc
+    curl -fLOsS ${mirror}python/${qpidpython}/qpid-python-${qpidpython}.tar.gz
+    gpgv qpid-python-${qpidpython}.tar.gz.asc qpid-python-${qpidpython}.tar.gz
     tar zxf qpid-python-${qpidpython}.tar.gz
+NUR
 
 ARG proton
-RUN set -ex ;\
-    curl -fLOsS ${upstream}/proton/${proton}/qpid-proton-${proton}.tar.gz.asc ;\
-    curl -fLOsS ${mirror}/proton/${proton}/qpid-proton-${proton}.tar.gz ;\
-    gpgv qpid-proton-${proton}.tar.gz.asc qpid-proton-${proton}.tar.gz ;\
+RUN <<NUR
+    set -ex
+    curl -fLOsS ${upstream}proton/${proton}/qpid-proton-${proton}.tar.gz.asc
+    curl -fLOsS ${mirror}proton/${proton}/qpid-proton-${proton}.tar.gz
+    gpgv qpid-proton-${proton}.tar.gz.asc qpid-proton-${proton}.tar.gz
     tar zxf qpid-proton-${proton}.tar.gz
+NUR
 
 ARG cpp_commit
 RUN set -ex ;\
