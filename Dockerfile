@@ -118,7 +118,7 @@ RUN ldd /usr/local/sbin/qpidd $(find /usr/local -name '*.so') | \
     sed 's/^\([^:]\+\):.*$/\1/' | sort -u > dependency.lst
 
 
-FROM debian:11.5-slim AS qpid-cpp
+FROM debian:11.8-slim AS qpid-cpp
 
 ARG proton
 ARG qpidpython
