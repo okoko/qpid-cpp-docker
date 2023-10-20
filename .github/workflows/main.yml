@@ -18,7 +18,7 @@ jobs:
     - id: created
       run: echo "created=$(date --utc +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@8c0edbc76e98fa90f69d9a2c020dcb50019dc325 # v2.2.1
@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Docker Hub Description
       uses: peter-evans/dockerhub-description@93b93397c27ed52b4055b8c6b2f8d92456ab3c56 # v3.1.2
       with:
