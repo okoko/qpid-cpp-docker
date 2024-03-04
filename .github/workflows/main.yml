@@ -14,62 +14,55 @@ jobs:
     permissions:
       contents: read
       packages: write
-    steps:
-    - id: created
-      run: echo "created=$(date --utc +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
 
-    - uses: actions/checkout@v4
+    steps:
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Figure out version tag & created date
+      id: vars
+      run: |
+        set -x
+        eval $( cat Dockerfile | sed -n -e 's/ARG \(cpp\|proton\)=/QPID_\U\1_VERSION=/p' )
+        echo "tag=$QPID_CPP_VERSION-$QPID_PROTON_VERSION" >> $GITHUB_OUTPUT
+        echo "created=$(date --utc +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # v3.0.0
+      uses: docker/setup-buildx-action@v3
 
     - name: Log in to Docker Hub
-      uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+      uses: docker/login-action@v3
       if: github.ref == 'refs/heads/main'
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
     - name: Log in to the Container registry
-      uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
+      uses: docker/login-action@v3
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
-      with:
-        context: .
-        load: true
-        build-args: |
-          CREATED=${{ steps.created.outputs.created }}
-          SOURCE_COMMIT=${{ github.sha }}
-        tags: |
-          okoko/qpid-cpp:latest
-        # https://docs.docker.com/build/ci/github-actions/cache/
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
-
-    - name: Discover the version tag
-      id: tag
-      run: |
-        set -x
-        eval $( docker image inspect okoko/qpid-cpp:latest | sed -n -e 's/.*"\(QPID_\(PROTON\|CPP\)_VERSION=.*\)".*/\1/p' )
-        echo "tag=$QPID_CPP_VERSION-$QPID_PROTON_VERSION" >> $GITHUB_OUTPUT
-
-    - uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
-      if: github.ref == 'refs/heads/main'
+    - uses: docker/build-push-action@v5
       with:
         context: .
         push: true
-        build-args: |
-          CREATED=${{ steps.created.outputs.created }}
-          SOURCE_COMMIT=${{ github.sha }}
         tags: |
-          ghcr.io/okoko/qpid-cpp:${{ steps.tag.outputs.tag }}
+          ghcr.io/okoko/qpid-cpp:${{ steps.vars.outputs.tag }}
           ghcr.io/okoko/qpid-cpp:latest
-          okoko/qpid-cpp:${{ steps.tag.outputs.tag }}
+          okoko/qpid-cpp:${{ steps.vars.outputs.tag }}
           okoko/qpid-cpp:latest
+        platforms: linux/amd64,linux/arm64
+        labels: ${{ steps.meta.outputs.labels }}
+        # load: true  # Does not work with multiplatform
+        build-args: |
+          CREATED=${{ steps.vars.outputs.created }}
+          SOURCE_COMMIT=${{ github.sha }}
         # https://docs.docker.com/build/ci/github-actions/cache/
         cache-from: type=gha
         cache-to: type=gha,mode=max
@@ -81,14 +74,14 @@ jobs:
     # https://octokit.github.io/rest.js/v19#git-update-ref
     - name: Tag the commit or update tag
       if: github.ref == 'refs/heads/main'
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         script: |
           try {
             await github.rest.git.createRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              ref: 'refs/tags/${{ steps.tag.outputs.tag }}',
+              ref: 'refs/tags/${{ steps.vars.outputs.tag }}',
               sha: context.sha,
             });
           } catch(e) {
@@ -96,7 +89,7 @@ jobs:
               await github.rest.git.updateRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: 'tags/${{ steps.tag.outputs.tag }}',
+                ref: 'tags/${{ steps.vars.outputs.tag }}',
                 sha: context.sha,
                 force: true,
               });
@@ -109,9 +102,12 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
-    - uses: actions/checkout@v4
+
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
     - name: Docker Hub Description
-      uses: peter-evans/dockerhub-description@dc67fad7001ef9e8e3c124cb7a64e16d0a63d864 # v3.4.2
+      uses: peter-evans/dockerhub-description@v4
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
