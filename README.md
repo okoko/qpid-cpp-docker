@@ -10,7 +10,8 @@ command if not started with qpidd command.
 
 You can get online line help using command
 
-    docker-compose run --rm qpid --help
+    docker build -t qpid .
+    docker run --rm qpid --help
 
 ## Qpid configuration
 
