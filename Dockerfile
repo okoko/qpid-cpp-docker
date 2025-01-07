@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Copyright 2024 Marko Kohtala <marko.kohtala@okoko.fi>
+# Copyright 2025 Marko Kohtala <marko.kohtala@okoko.fi>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,46 +21,15 @@ ARG proton=0.40.0
 ARG qpidpython=1.37.0
 # Only latest versions are available on CDN or any mirror.
 # https://archive.apache.org/ has a download limit and must not be used.
-ARG mirror=https://dlcdn.apache.org/qpid/
-ARG upstream=https://dlcdn.apache.org/qpid/
+ARG mirror=https://archive.apache.org/dist/qpid/
+ARG upstream=https://archive.apache.org/dist/qpid/
 ARG home=/var/lib/qpidd
 ARG CREATED
 ARG SOURCE_COMMIT
 
-# This can be a common base for all build dependencies
-FROM buildpack-deps:bullseye AS builddeps
-
-RUN --mount=type=cache,target=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    set -ex; \
-# To keep cache of downloaded .debs, replace docker configuration
-    rm -f /etc/apt/apt.conf.d/docker-clean ;\
-    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache ;\
-    apt-get update; \
-    DEBIAN_FRONTEND=noninteractive \
-    apt-get install -y --no-install-recommends \
-        cmake uuid-dev libboost-program-options-dev libboost-system-dev \
-        libdb++-dev libaio-dev ruby libnss3-dev libsasl2-dev \
-        swig libjsoncpp-dev \
-        python2-dev python-setuptools python-is-python2
-
+FROM --platform=$BUILDPLATFORM buildpack-deps:bullseye AS qpid-python
 COPY KEYS .
 RUN gpg --no-default-keyring --keyring trustedkeys.kbx --import KEYS
-
-WORKDIR /usr/src
-
-# See https://github.com/opencontainers/image-spec/blob/master/annotations.md
-LABEL org.opencontainers.image.authors="Marko Kohtala <marko.kohtala@okoko.fi>"
-LABEL org.opencontainers.image.url="https://hub.docker.com/r/okoko/qpid-build"
-LABEL org.opencontainers.image.documentation="https://github.com/okoko/qpid-cpp-docker"
-LABEL org.opencontainers.image.source="https://github.com/okoko/qpid-cpp-docker"
-LABEL org.opencontainers.image.vendor="Software Consulting Kohtala Ltd"
-LABEL org.opencontainers.image.licenses="Apache-2.0"
-LABEL org.opencontainers.image.title="Apache Qpid C++ Broker"
-LABEL org.opencontainers.image.description="Apache Qpid build dependencies for development"
-
-
-FROM builddeps AS build
 ARG mirror
 ARG upstream
 ARG qpidpython
@@ -72,6 +41,11 @@ RUN <<NUR
     tar zxf qpid-python-${qpidpython}.tar.gz
 NUR
 
+FROM --platform=$BUILDPLATFORM buildpack-deps:bullseye AS qpid-proton
+COPY KEYS .
+RUN gpg --no-default-keyring --keyring trustedkeys.kbx --import KEYS
+ARG mirror
+ARG upstream
 ARG proton
 RUN <<NUR
     set -ex
@@ -81,30 +55,66 @@ RUN <<NUR
     tar zxf qpid-proton-${proton}.tar.gz
 NUR
 
+FROM --platform=$BUILDPLATFORM buildpack-deps:bullseye AS qpid-cpp-commit
 ARG cpp_commit
-RUN set -ex ;\
-    curl -fLOsS https://github.com/apache/qpid-cpp/archive/${cpp_commit}.zip ;\
+RUN <<NUR
+    set -ex
+    curl -fLOsS https://github.com/apache/qpid-cpp/archive/${cpp_commit}.zip
     unzip ${cpp_commit}.zip
+NUR
 
-RUN set -ex; \
-    cd qpid-python-${qpidpython}; \
+FROM buildpack-deps:bullseye AS build
+
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    <<NUR
+    set -ex
+    # To keep cache of downloaded .debs, replace docker configuration
+    rm -f /etc/apt/apt.conf.d/docker-clean
+    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y --no-install-recommends \
+        cmake uuid-dev libboost-program-options-dev libboost-system-dev \
+        libdb++-dev libaio-dev ruby libnss3-dev libsasl2-dev \
+        swig libjsoncpp-dev \
+        python2-dev python-setuptools python-is-python2
+NUR
+
+WORKDIR /usr/src
+
+ARG qpidpython
+COPY --link --from=qpid-python qpid-python-${qpidpython} qpid-python-${qpidpython}/
+RUN <<NUR
+    set -ex
+    cd qpid-python-${qpidpython}
     python setup.py install
+NUR
 
-RUN set -ex; \
-    cd qpid-proton-${proton}; \
-    mkdir build && cd build; \
-    cmake -DINCLUDE_INSTALL_DIR=/usr/include -DCMAKE_BUILD_TYPE=Release -DBUILD_CPP=OFF -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF -DSYSINSTALL_BINDINGS=ON .. ; \
-    make -j $(($(nproc)+1)) all; \
+ARG proton
+COPY --link --from=qpid-proton qpid-proton-${proton} qpid-proton-${proton}/
+RUN <<NUR
+    set -ex
+    cd qpid-proton-${proton}
+    mkdir build && cd build
+    cmake -DINCLUDE_INSTALL_DIR=/usr/include -DCMAKE_BUILD_TYPE=Release -DBUILD_CPP=OFF -DBUILD_EXAMPLES=OFF -DBUILD_TESTING=OFF -DSYSINSTALL_BINDINGS=ON ..
+    make -j $(($(nproc)+1)) all
     make install
-RUN set -ex; \
-    cd qpid-cpp-${cpp_commit}; \
-    mkdir build && cd build; \
+NUR
+
+ARG cpp_commit
+COPY --link --from=qpid-cpp-commit qpid-cpp-${cpp_commit} qpid-cpp-${cpp_commit}/
+RUN <<NUR
+    set -ex
+    cd qpid-cpp-${cpp_commit}
+    mkdir build && cd build
     # BOOST_BIND_GLOBAL_PLACEHOLDERS silences a lot of deprecation message:
     # The practice of declaring the Bind placeholders (_1, _2, ...) in the global namespace is deprecated.
     # Please use <boost/bind/bind.hpp> + using namespace boost::placeholders, or define BOOST_BIND_GLOBAL_PLACEHOLDERS to retain the current behavior.
-    cmake -DSYSCONF_INSTALL_DIR=/etc -DCMAKE_BUILD_TYPE=Release -DBUILD_BINDING_PERL=OFF -DBUILD_DOCS=OFF -DBUILD_TESTING=OFF -DCMAKE_CXX_FLAGS=-DBOOST_BIND_GLOBAL_PLACEHOLDERS .. ; \
-    make -j $(($(nproc)+1)) all; \
+    cmake -DSYSCONF_INSTALL_DIR=/etc -DCMAKE_BUILD_TYPE=Release -DBUILD_BINDING_PERL=OFF -DBUILD_DOCS=OFF -DBUILD_TESTING=OFF -DCMAKE_CXX_FLAGS=-DBOOST_BIND_GLOBAL_PLACEHOLDERS ..
+    make -j $(($(nproc)+1)) all
     make install
+NUR
 # RUN cd qpid-cpp-${cpp_commit}/build && cmake -LAH ..
 # This is some MS-SQL plugin selector that just gives annoying warning
 RUN rm -f /usr/local/lib/qpid/daemon/store.so
@@ -116,10 +126,12 @@ RUN rm -rf /usr/local/include
 RUN rm -rf /usr/local/share/qpid/examples
 
 # List depended libraries in Debian
-RUN ldd /usr/local/sbin/qpidd $(find /usr/local -name '*.so') | \
-    sed -ne '\,\(/usr/local/\|not found\),!s/.* => \([^ ]*\) (.*/\1/p' | \
-    sort -u | while read n ; do dpkg-query -S "$n" ; done | \
+RUN <<NUR
+    ldd /usr/local/sbin/qpidd $(find /usr/local -name '*.so') |
+    sed -ne '\,\(/usr/local/\|not found\),!s/.* => \([^ ]*\) (.*/\1/p' |
+    sort -u | while read n ; do dpkg-query -S "$n" ; done |
     sed 's/^\([^:]\+\):.*$/\1/' | sort -u > dependency.lst
+NUR
 
 
 FROM debian:11.11-slim AS qpid-cpp
@@ -129,17 +141,17 @@ ARG qpidpython
 ARG cpp
 ARG cpp_commit
 ARG home
-ENV QPID_PROTON_VERSION=${proton} \
-    QPID_PYTHON_VERSION=${qpidpython} \
-    QPID_CPP_VERSION=${cpp} \
-    QPID_CPP_COMMIT=${cpp_commit} \
+ENV QPID_PROTON_VERSION=${proton}
+ENV QPID_PYTHON_VERSION=${qpidpython}
+ENV QPID_CPP_VERSION=${cpp}
+ENV QPID_CPP_COMMIT=${cpp_commit}
 # The scripts have hard coded default for QPID_TOOLS_HOME to /usr/share/qpid-tools
-    QPID_TOOLS_HOME=/usr/local/share/qpid-tools \
+ENV QPID_TOOLS_HOME=/usr/local/share/qpid-tools
 # QPID_ prefix is reserved for overriding qpidd.conf settings
 # https://github.com/scholzj/docker-qpid-cpp introduced these
-    QPIDD_VERSION=${cpp} \
-    QPIDD_HOME=${home} \
-    QPIDD_DATA_DIR=${home}/work
+ENV QPIDD_VERSION=${cpp}
+ENV QPIDD_HOME=${home}
+ENV QPIDD_DATA_DIR=${home}/work
 
 # Add our user and group first to make sure their IDs get assigned
 # consistently, regardless of whatever dependencies get added
@@ -149,19 +161,21 @@ RUN useradd --no-log-init --system --user-group --create-home --home-dir ${QPIDD
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=target=/tmp/dependency.lst,source=/usr/src/dependency.lst,from=build \
-    set -ex; \
-# To keep cache of downloaded .debs, replace docker configuration
-    rm -f /etc/apt/apt.conf.d/docker-clean ;\
-    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache ;\
-    apt-get update; \
+    <<NUR
+    set -ex
+    # To keep cache of downloaded .debs, replace docker configuration
+    rm -f /etc/apt/apt.conf.d/docker-clean
+    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
+    apt-get update
     DEBIAN_FRONTEND=noninteractive \
+    # Qpid CPP dependencies
+    # libnss3-tools sasl2-bin for docker-entrypoint.sh
     apt-get install -y --no-install-recommends --no-upgrade \
-# Qpid CPP dependencies
         python2-minimal python-pkg-resources \
         $(cat /tmp/dependency.lst) \
         ca-certificates libsasl2-modules \
-# The docker-entrypoint.sh uses these
         libnss3-tools sasl2-bin
+NUR
 
 # /usr/src/qpid-*/build/install_manifext.txt contain most, but not all files to copy.
 # Similarly I tried to use make install DESTDIR=/usr/src/install to gather
