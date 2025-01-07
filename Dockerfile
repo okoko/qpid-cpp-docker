@@ -33,10 +33,10 @@ RUN gpg --no-default-keyring --keyring trustedkeys.kbx --import KEYS
 ARG mirror
 ARG upstream
 ARG qpidpython
+ADD --link ${upstream}python/${qpidpython}/qpid-python-${qpidpython}.tar.gz.asc ./
+ADD --link ${mirror}python/${qpidpython}/qpid-python-${qpidpython}.tar.gz ./
 RUN <<NUR
     set -ex
-    curl -fLOsS ${upstream}python/${qpidpython}/qpid-python-${qpidpython}.tar.gz.asc
-    curl -fLOsS ${mirror}python/${qpidpython}/qpid-python-${qpidpython}.tar.gz
     gpgv qpid-python-${qpidpython}.tar.gz.asc qpid-python-${qpidpython}.tar.gz
     tar zxf qpid-python-${qpidpython}.tar.gz
 NUR
@@ -47,21 +47,18 @@ RUN gpg --no-default-keyring --keyring trustedkeys.kbx --import KEYS
 ARG mirror
 ARG upstream
 ARG proton
+ADD --link ${upstream}proton/${proton}/qpid-proton-${proton}.tar.gz.asc ./
+ADD --link ${mirror}proton/${proton}/qpid-proton-${proton}.tar.gz ./
 RUN <<NUR
     set -ex
-    curl -fLOsS ${upstream}proton/${proton}/qpid-proton-${proton}.tar.gz.asc
-    curl -fLOsS ${mirror}proton/${proton}/qpid-proton-${proton}.tar.gz
     gpgv qpid-proton-${proton}.tar.gz.asc qpid-proton-${proton}.tar.gz
     tar zxf qpid-proton-${proton}.tar.gz
 NUR
 
 FROM --platform=$BUILDPLATFORM buildpack-deps:bullseye AS qpid-cpp-commit
 ARG cpp_commit
-RUN <<NUR
-    set -ex
-    curl -fLOsS https://github.com/apache/qpid-cpp/archive/${cpp_commit}.zip
-    unzip ${cpp_commit}.zip
-NUR
+ADD --link https://github.com/apache/qpid-cpp/archive/${cpp_commit}.zip ./
+RUN unzip ${cpp_commit}.zip
 
 FROM buildpack-deps:bullseye AS build
 
