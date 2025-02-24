@@ -62,8 +62,9 @@ RUN unzip ${cpp_commit}.zip
 
 FROM buildpack-deps:bullseye AS build
 
-RUN --mount=type=cache,target=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+ARG TARGETARCH
+RUN --mount=type=cache,target=/var/cache/apt,id=bullseye-/var/cache/apt-${TARGETARCH} \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked,id=bullseye-/var/lib/apt-${TARGETARCH} \
     <<NUR
     set -ex
     # To keep cache of downloaded .debs, replace docker configuration
@@ -131,7 +132,7 @@ RUN <<NUR
 NUR
 
 
-FROM debian:11.11-slim AS qpid-cpp
+FROM debian:11-slim AS qpid-cpp
 
 ARG proton
 ARG qpidpython
@@ -155,8 +156,8 @@ ENV QPIDD_DATA_DIR=${home}/work
 RUN useradd --no-log-init --system --user-group --create-home --home-dir ${QPIDD_HOME} qpidd
 
 # We need python for management tools like qpid-config
-RUN --mount=type=cache,target=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,target=/var/cache/apt,id=bullseye-/var/cache/apt-${TARGETARCH} \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked,id=bullseye-/var/lib/apt-${TARGETARCH} \
     --mount=target=/tmp/dependency.lst,source=/usr/src/dependency.lst,from=build \
     <<NUR
     set -ex
