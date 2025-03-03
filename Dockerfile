@@ -156,6 +156,7 @@ ENV QPIDD_DATA_DIR=${home}/work
 RUN useradd --no-log-init --system --user-group --create-home --home-dir ${QPIDD_HOME} qpidd
 
 # We need python for management tools like qpid-config
+ARG TARGETARCH
 RUN --mount=type=cache,target=/var/cache/apt,id=bullseye-/var/cache/apt-${TARGETARCH} \
     --mount=type=cache,target=/var/lib/apt,sharing=locked,id=bullseye-/var/lib/apt-${TARGETARCH} \
     --mount=target=/tmp/dependency.lst,source=/usr/src/dependency.lst,from=build \
